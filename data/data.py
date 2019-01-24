@@ -15,6 +15,7 @@ config_json = json.load(open(os.path.dirname(__file__) + '/../config.json'))
 DB = config_json['DB_HISTORY'].split('/')[-1]
 engine_runs = create_engine(config_json['DB_RUNS'])
 
+
 # Decide which exchange you want to trade on (significant even in training). Pros & cons; Kraken's API provides more
 # details than GDAX (bid/ask spread, VWAP, etc) which means predicting its next price-action is easier for RL. It
 # also has a lower minimum trade (.002 BTC vs GDAX's .01 BTC), which gives it more wiggle room. However, its API is
@@ -23,7 +24,10 @@ engine_runs = create_engine(config_json['DB_RUNS'])
 class Exchange(Enum):
     GDAX = 'gdax'
     KRAKEN = 'kraken'
+
+
 EXCHANGE = Exchange.KRAKEN
+
 
 # see {last_good_commit} for imputes (ffill, bfill, zero),
 # alex database
@@ -43,6 +47,7 @@ def setup_runs_table():
             uniques double precision[]
         );
     """)
+
 
 class Data(object):
     def __init__(self, ep_len=5000, window=300, arbitrage=False, indicators={}):
@@ -100,13 +105,13 @@ class Data(object):
             'open high low close volume_btc volume vwap'.split(' ')
             for table in filenames.keys()
         ]
-        df[diff_cols] = df[diff_cols].pct_change()\
-            .replace([np.inf, -np.inf], np.nan)\
+        df[diff_cols] = df[diff_cols].pct_change() \
+            .replace([np.inf, -np.inf], np.nan) \
             .ffill()  # .bfill()?
         df = df.iloc[1:]
         target = df[self.target]  # don't scale price changes; we use that in raw form later
         df = pd.DataFrame(
-            robust_scale(df.values, quantile_range=(.1, 100-.1)),
+            robust_scale(df.values, quantile_range=(.1, 100 - .1)),
             columns=df.columns, index=df.index
         )
         df[self.target] = target
@@ -124,8 +129,8 @@ class Data(object):
 
     def get_data(self, ep, step):
         offset = self.offset(ep, step)
-        X = self.df.iloc[offset:offset+self.window]
-        y = self.df.iloc[offset+self.window]
+        X = self.df.iloc[offset:offset + self.window]
+        y = self.df.iloc[offset + self.window]
         return X, y
 
     def get_prices(self, ep, step):
@@ -143,3 +148,7 @@ class Data(object):
 
     def fetch_more(self):
         raise_refactor()
+
+
+if __name__ == '__main__':
+    setup_runs_table()
